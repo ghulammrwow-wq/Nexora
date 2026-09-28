@@ -1,0 +1,227 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginStart="8dp"
+    android:layout_marginEnd="8dp"
+    android:layout_marginTop="6dp"
+    android:layout_marginBottom="6dp"
+    app:cardCornerRadius="16dp"
+    app:cardElevation="2dp"
+    app:strokeWidth="1dp"
+    app:strokeColor="#E5E5E5">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@android:color/white">
+
+        <!-- ==================================================
+             PROFILE ROW
+             ================================================== -->
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="14dp"
+            android:paddingTop="12dp"
+            android:paddingEnd="8dp"
+            android:paddingBottom="10dp">
+
+            <!-- PROFILE IMAGE -->
+
+            <com.google.android.material.imageview.ShapeableImageView
+                android:id="@+id/ivDocumentaryProfile"
+                android:layout_width="42dp"
+                android:layout_height="42dp"
+                android:background="#EEEEEE"
+                android:scaleType="centerCrop"
+                android:src="@drawable/person_icon"
+                app:shapeAppearanceOverlay="@style/CircularImage" />
+
+            <!-- USER NAME -->
+
+            <TextView
+                android:id="@+id/tvDocumentaryUsername"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="10dp"
+                android:text="Name"
+                android:textColor="#222222"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:maxLines="1"
+                android:ellipsize="end" />
+
+            <!-- ==================================================
+                 NEW: DELETE ICON
+                 ================================================== -->
+
+            <ImageButton
+                android:id="@+id/btnDelete"
+                android:layout_width="42dp"
+                android:layout_height="42dp"
+                android:layout_marginStart="4dp"
+                android:background="@android:color/transparent"
+                android:contentDescription="Delete"
+                android:padding="10dp"
+                android:scaleType="centerInside"
+                android:src="@drawable/close_icon" />
+
+        </LinearLayout>
+
+        <!-- ==================================================
+             TITLE
+             ================================================== -->
+
+        <TextView
+            android:id="@+id/tvDocumentaryTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingStart="14dp"
+            android:paddingEnd="14dp"
+            android:paddingTop="4dp"
+            android:paddingBottom="6dp"
+            android:text="Post title"
+            android:textColor="#171717"
+            android:textSize="12sp"
+            android:maxLines="1"
+            android:ellipsize="end" />
+
+        <!-- ==================================================
+             DESCRIPTION - ONLY TEXT POST
+             ================================================== -->
+
+        <TextView
+            android:id="@+id/tvDocumentaryDescription"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingStart="14dp"
+            android:paddingEnd="14dp"
+            android:paddingBottom="12dp"
+            android:text="Post description"
+            android:textColor="#555555"
+            android:textSize="13sp"
+            android:lineSpacingExtra="2dp"
+            android:maxLines="5"
+            android:ellipsize="end"
+            android:visibility="gone" />
+
+        <!-- ==================================================
+             MEDIA
+             ================================================== -->
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <!-- IMAGE -->
+
+            <ImageView
+                android:id="@+id/ivDocumentaryMedia"
+                android:layout_width="match_parent"
+                android:layout_height="360dp"
+                android:scaleType="centerCrop"
+                android:background="#F2F2F2"
+                android:visibility="gone"
+                android:contentDescription="Post image" />
+
+            <!-- VIDEO -->
+
+            <androidx.media3.ui.PlayerView
+                android:id="@+id/videoDocumentary"
+                android:layout_width="match_parent"
+                android:layout_height="360dp"
+                android:layout_margin="0dp"
+                android:background="@android:color/transparent"
+                android:visibility="gone"
+                app:use_controller="true"
+                app:resize_mode="zoom"
+                app:show_buffering="when_playing"
+                app:show_shuffle_button="false"
+                app:show_subtitle_button="false"
+                app:show_timeout="3000" />
+
+            <!-- PDF -->
+
+            <LinearLayout
+                android:id="@+id/layoutPdf"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:background="@color/white"
+                android:padding="8dp"
+                android:visibility="gone">
+
+                <ImageView
+                    android:layout_width="35dp"
+                    android:layout_height="35dp"
+                    android:src="@drawable/pdf"
+                    android:background="@color/white"
+                    android:contentDescription="PDF" />
+
+                <TextView
+                    android:id="@+id/tvPdfName"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="PDF Title"
+                    android:textColor="#333333"
+                    android:textSize="6sp"
+                    android:maxLines="1"
+                    android:ellipsize="middle" />
+
+            </LinearLayout>
+
+        </FrameLayout>
+
+        <!-- ==================================================
+             FAVORITE + SHARE
+             ================================================== -->
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp">
+
+            <!-- FAVORITE -->
+
+            <ImageButton
+                android:id="@+id/btnFavorite"
+                android:layout_width="42dp"
+                android:layout_height="42dp"
+                android:background="@android:color/transparent"
+                android:contentDescription="Favorite"
+                android:padding="9dp"
+                android:scaleType="centerInside"
+                android:src="@drawable/heart" />
+
+            <!-- SHARE -->
+
+            <ImageButton
+                android:id="@+id/btnShare"
+                android:layout_width="42dp"
+                android:layout_height="42dp"
+                android:layout_marginStart="4dp"
+                android:background="@android:color/transparent"
+                android:contentDescription="Share"
+                android:padding="9dp"
+                android:scaleType="centerInside"
+                android:src="@drawable/share" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</com.google.android.material.card.MaterialCardView>
