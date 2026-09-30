@@ -74,6 +74,7 @@ dependencies {
 
     implementation("androidx.lifecycle:lifecycle-process:2.9.2")
 
+    implementation("com.github.bumptech.glide:glide:4.16.0")
 
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)

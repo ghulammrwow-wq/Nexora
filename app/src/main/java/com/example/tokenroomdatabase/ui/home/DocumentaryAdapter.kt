@@ -1,13 +1,12 @@
 package com.example.tokenroomdatabase.ui.home
 
-import android.graphics.Color
 import android.net.Uri
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.media3.common.MediaItem
-import androidx.media3.exoplayer.ExoPlayer
+import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
 import com.example.tokenroomdatabase.R
 import com.example.tokenroomdatabase.data.model.Documentary
 import com.example.tokenroomdatabase.databinding.ItemDocumentaryBinding
@@ -17,366 +16,225 @@ class DocumentaryAdapter(
     private val onDocumentClick: (Documentary) -> Unit,
     private val onShareClick: (Documentary) -> Unit,
     private val onTextClick: (Documentary) -> Unit,
-
-    // ==================================================
-    // NEW: DELETE CLICK
-    // ==================================================
-
-    private val onDeleteClick: (Documentary) -> Unit
-
+    private val onDeleteClick: (Documentary) -> Unit,
+    private val isFavoriteScreen: Boolean = false
 ) : RecyclerView.Adapter<DocumentaryAdapter.DocumentaryViewHolder>() {
 
-    private var documentaryList =
-        emptyList<Documentary>()
+    private var documentaryList = emptyList<Documentary>()
 
-    fun submitList(
-        list: List<Documentary>
-    ) {
+    fun submitList(list: List<Documentary>) {
+        val diffCallback = DocumentaryDiffCallback(documentaryList, list)
+        val diffResult = DiffUtil.calculateDiff(diffCallback)
+        documentaryList = list
+        diffResult.dispatchUpdatesTo(this)
+    }
 
-        documentaryList =
-            list
+    private class DocumentaryDiffCallback(
+        private val oldList: List<Documentary>,
+        private val newList: List<Documentary>
+    ) : DiffUtil.Callback() {
 
-        notifyDataSetChanged()
+        override fun getOldListSize(): Int = oldList.size
+        override fun getNewListSize(): Int = newList.size
+
+        override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
+            return oldList[oldItemPosition].id == newList[newItemPosition].id
+        }
+
+        override fun areContentsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
+            if (oldItemPosition != newItemPosition) return false
+            return oldList[oldItemPosition] == newList[newItemPosition]
+        }
     }
 
     override fun onCreateViewHolder(
         parent: ViewGroup,
         viewType: Int
     ): DocumentaryViewHolder {
-
-        val binding =
-            ItemDocumentaryBinding.inflate(
-                LayoutInflater.from(parent.context),
-                parent,
-                false
-            )
-
-        return DocumentaryViewHolder(
-            binding
+        val binding = ItemDocumentaryBinding.inflate(
+            LayoutInflater.from(parent.context),
+            parent,
+            false
         )
+        return DocumentaryViewHolder(binding)
     }
 
     override fun onBindViewHolder(
         holder: DocumentaryViewHolder,
         position: Int
     ) {
-
-        holder.bind(
-            documentaryList[position]
-        )
+        holder.bind(documentaryList[position], position)
     }
 
-    override fun getItemCount(): Int =
-        documentaryList.size
+    override fun getItemCount(): Int = documentaryList.size
 
-    override fun onViewRecycled(
-        holder: DocumentaryViewHolder
-    ) {
-
+    override fun onViewRecycled(holder: DocumentaryViewHolder) {
         holder.releasePlayer()
-
-        super.onViewRecycled(
-            holder
-        )
+        super.onViewRecycled(holder)
     }
 
     inner class DocumentaryViewHolder(
         private val binding: ItemDocumentaryBinding
-    ) : RecyclerView.ViewHolder(
-        binding.root
-    ) {
-
-        private var player: ExoPlayer? = null
+    ) : RecyclerView.ViewHolder(binding.root) {
 
         fun bind(
-            documentary: Documentary
+            documentary: Documentary,
+            position: Int
         ) {
+            // Set item position number
+            binding.tvNumber.text = "${position + 1}"
 
             releasePlayer()
 
-            // ==================================================
-            // USER NAME
-            // ==================================================
+            // Dynamic height adjustment for Favorite screen vs Normal screen
+            if (isFavoriteScreen) {
+                binding.layoutMediaContainer.layoutParams.height =
+                    (120 * binding.root.resources.displayMetrics.density).toInt()
 
-            binding.tvDocumentaryUsername.text =
-                documentary.username
-
-            // ==================================================
-            // PROFILE IMAGE
-            // ==================================================
-
-            if (
-                documentary.userImageUri.isNotEmpty()
-            ) {
-
-                try {
-
-                    binding.ivDocumentaryProfile.setImageURI(
-                        Uri.parse(
-                            documentary.userImageUri
-                        )
-                    )
-
-                } catch (_: Exception) {
-
-                    binding.ivDocumentaryProfile.setImageResource(
-                        R.drawable.person_icon
-                    )
-                }
-
+                binding.tvDocumentaryDescription.layoutParams.height =
+                    (120 * binding.root.resources.displayMetrics.density).toInt()
+                binding.tvDocumentaryDescription.maxLines = 7
             } else {
 
-                binding.ivDocumentaryProfile.setImageResource(
-                    R.drawable.person_icon
-                )
+                binding.tvDocumentaryDescription.layoutParams.height =
+                    (90 * binding.root.resources.displayMetrics.density).toInt()
+                binding.tvDocumentaryDescription.maxLines = 4
             }
 
-            // ==================================================
-            // DEFAULT TITLE SIZE
-            // ==================================================
+            // USER NAME
+            binding.tvDocumentaryUsername.text = documentary.username
 
-            binding.tvDocumentaryTitle.textSize =
-                16f
+            // PROFILE IMAGE
+            if (documentary.userImageUri.isNotEmpty()) {
+                try {
+                    Glide.with(binding.root.context)
+                        .load(Uri.parse(documentary.userImageUri))
+                        .placeholder(R.drawable.person_icon)
+                        .error(R.drawable.person_icon)
+                        .circleCrop()
+                        .into(binding.ivDocumentaryProfile)
+                } catch (_: Exception) {
+                    binding.ivDocumentaryProfile.setImageResource(R.drawable.person_icon)
+                }
+            } else {
+                binding.ivDocumentaryProfile.setImageResource(R.drawable.person_icon)
+            }
 
-            // ==================================================
+            // UNIFORM TEXT SIZES & TITLE FORMAT
+            binding.tvDocumentaryUsername.textSize = 11f
+            binding.tvDocumentaryTitle.textSize = 12f
+
+            val formattedTitle = documentary.title.take(20)
+
             // HIDE ALL CONTENT FIRST
-            // ==================================================
+            binding.tvDocumentaryTitle.visibility = View.GONE
+            binding.tvDocumentaryDescription.visibility = View.GONE
+            binding.layoutMediaContainer.visibility = View.GONE
+            binding.ivDocumentaryMedia.visibility = View.GONE
+            binding.layoutVideo.visibility = View.GONE
+            binding.videoDocumentary.visibility = View.GONE
+            binding.layoutPdf.visibility = View.GONE
 
-            binding.tvDocumentaryTitle.visibility =
-                View.GONE
-
-            binding.tvDocumentaryDescription.visibility =
-                View.GONE
-
-            binding.ivDocumentaryMedia.visibility =
-                View.GONE
-
-            binding.videoDocumentary.visibility =
-                View.GONE
-
-            binding.layoutPdf.visibility =
-                View.GONE
-
-            // ==================================================
             // MEDIA TYPE
-            // ==================================================
-
-            when (
-                documentary.mediaType
-            ) {
-
-                // ==================================================
-                // TEXT POST
-                // ==================================================
-
+            when (documentary.mediaType) {
                 "text" -> {
+                    binding.tvDocumentaryTitle.visibility = View.VISIBLE
+                    binding.tvDocumentaryTitle.text = formattedTitle
 
-                    binding.tvDocumentaryTitle.visibility =
-                        View.VISIBLE
+                    binding.tvDocumentaryDescription.visibility = View.VISIBLE
+                    binding.tvDocumentaryDescription.text = documentary.description
 
-                    binding.tvDocumentaryTitle.text =
-                        documentary.title
-
-                    binding.tvDocumentaryDescription.visibility =
-                        View.VISIBLE
-
-                    binding.tvDocumentaryDescription.text =
-                        documentary.description
+                    binding.layoutMediaContainer.visibility = View.GONE
                 }
 
-                // ==================================================
-                // IMAGE POST
-                // ==================================================
-
                 "image" -> {
+                    binding.tvDocumentaryTitle.visibility = View.VISIBLE
+                    binding.tvDocumentaryTitle.text = formattedTitle
 
-                    binding.tvDocumentaryTitle.visibility =
-                        View.VISIBLE
+                    binding.layoutMediaContainer.visibility = View.VISIBLE
 
-                    binding.tvDocumentaryTitle.text =
-                        documentary.title.take(25)
-
-                    if (
-                        documentary.documentUri.isNotEmpty()
-                    ) {
-
-                        binding.ivDocumentaryMedia.visibility =
-                            View.VISIBLE
-
+                    if (documentary.documentUri.isNotEmpty()) {
+                        binding.ivDocumentaryMedia.visibility = View.VISIBLE
                         try {
-
-                            binding.ivDocumentaryMedia.setImageURI(
-                                Uri.parse(
-                                    documentary.documentUri
-                                )
-                            )
-
+                            Glide.with(binding.root.context)
+                                .load(Uri.parse(documentary.documentUri))
+                                .centerCrop()
+                                .into(binding.ivDocumentaryMedia)
                         } catch (_: Exception) {
-
-                            binding.ivDocumentaryMedia.visibility =
-                                View.GONE
+                            binding.ivDocumentaryMedia.visibility = View.GONE
                         }
                     }
                 }
 
-                // ==================================================
-                // VIDEO POST
-                // ==================================================
-
                 "video" -> {
+                    binding.tvDocumentaryTitle.visibility = View.VISIBLE
+                    binding.tvDocumentaryTitle.text = formattedTitle
 
-                    binding.tvDocumentaryTitle.visibility =
-                        View.VISIBLE
+                    binding.layoutMediaContainer.visibility = View.VISIBLE
+                    binding.layoutVideo.visibility = View.VISIBLE
 
-                    binding.tvDocumentaryTitle.text =
-                        documentary.title.take(25)
+                    if (documentary.documentUri.isNotEmpty()) {
+                        try {
+                            Glide.with(binding.root.context)
+                                .load(Uri.parse(documentary.documentUri))
+                                .centerCrop()
+                                .into(binding.ivVideoThumbnail)
+                        } catch (_: Exception) {
+                            binding.ivVideoThumbnail.setImageResource(R.drawable.camera)
+                        }
+                    } else {
+                        binding.ivVideoThumbnail.setImageResource(R.drawable.camera)
+                    }
 
-                    if (
-                        documentary.documentUri.isNotEmpty()
-                    ) {
-
-                        binding.videoDocumentary.visibility =
-                            View.VISIBLE
-
-                        player =
-                            ExoPlayer.Builder(
-                                binding.root.context
-                            ).build()
-
-                        binding.videoDocumentary.player =
-                            player
-
-                        val mediaItem =
-                            MediaItem.fromUri(
-                                Uri.parse(
-                                    documentary.documentUri
-                                )
-                            )
-
-                        player?.setMediaItem(
-                            mediaItem
-                        )
-
-                        player?.prepare()
-
-                        player?.playWhenReady =
-                            false
+                    binding.layoutVideo.setOnClickListener {
+                        onDocumentClick(documentary)
                     }
                 }
 
-                // ==================================================
-                // PDF POST
-                // ==================================================
-
                 "pdf" -> {
+                    binding.tvDocumentaryTitle.visibility = View.VISIBLE
+                    binding.tvDocumentaryTitle.text = formattedTitle
 
-                    binding.tvDocumentaryTitle.visibility =
-                        View.VISIBLE
+                    binding.layoutMediaContainer.visibility = View.VISIBLE
+                    binding.layoutPdf.visibility = View.VISIBLE
 
-                    binding.tvDocumentaryTitle.text =
-                        documentary.title.take(25)
-
-                    binding.tvDocumentaryUsername.textSize =
-                        10f
-
-                    binding.tvDocumentaryTitle.textSize =
-                        10f
-
-                    binding.layoutPdf.visibility =
-                        View.VISIBLE
-
-                    binding.tvPdfName.text =
-                        documentary.title
+                    binding.tvPdfName.text = formattedTitle
                 }
             }
 
-            // ==================================================
-            // FAVORITE COLOR
-            // ==================================================
-
-            if (
-                documentary.isFavorite
-            ) {
-
-                binding.btnFavorite.setColorFilter(
-                    Color.RED
-                )
-
+            // FAVORITE ICON
+            binding.btnFavorite.clearColorFilter()
+            if (documentary.isFavorite) {
+                binding.btnFavorite.setImageResource(R.drawable.heart_filled)
             } else {
-
-                binding.btnFavorite.setColorFilter(
-                    Color.GRAY
-                )
+                binding.btnFavorite.setImageResource(R.drawable.heart_outline)
             }
 
-            // ==================================================
-            // FAVORITE CLICK
-            // ==================================================
-
+            // ACTIONS
             binding.btnFavorite.setOnClickListener {
-
-                onFavoriteClick(
-                    documentary
-                )
+                onFavoriteClick(documentary)
             }
-
-            // ==================================================
-            // SHARE CLICK
-            // ==================================================
 
             binding.btnShare.setOnClickListener {
-
-                onShareClick(
-                    documentary
-                )
+                onShareClick(documentary)
             }
-
-            // ==================================================
-            // NEW: DELETE CLICK
-            // ==================================================
 
             binding.btnDelete.setOnClickListener {
-
-                onDeleteClick(
-                    documentary
-                )
+                onDeleteClick(documentary)
             }
 
-            // ==================================================
             // CARD CLICK
-            // ==================================================
-
             binding.root.setOnClickListener {
-
-                if (
-                    documentary.mediaType == "text"
-                ) {
-
-                    onTextClick(
-                        documentary
-                    )
-
+                if (documentary.mediaType == "text") {
+                    onTextClick(documentary)
                 } else {
-
-                    onDocumentClick(
-                        documentary
-                    )
+                    onDocumentClick(documentary)
                 }
             }
         }
 
-        // ==================================================
-        // RELEASE VIDEO PLAYER
-        // ==================================================
-
         fun releasePlayer() {
-
-            binding.videoDocumentary.player =
-                null
-
-            player?.release()
-
-            player = null
+            binding.videoDocumentary.player = null
         }
     }
 }

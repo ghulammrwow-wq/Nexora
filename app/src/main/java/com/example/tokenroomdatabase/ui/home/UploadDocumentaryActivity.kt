@@ -47,10 +47,7 @@ class UploadDocumentaryActivity : AppCompatActivity() {
 
                 when (postType) {
 
-                    // =========================
                     // IMAGE
-                    // =========================
-
                     "image" -> {
 
                         binding.ivMediaPreview.setImageURI(uri)
@@ -74,10 +71,8 @@ class UploadDocumentaryActivity : AppCompatActivity() {
                             View.GONE
                     }
 
-                    // =========================
-                    // VIDEO
-                    // =========================
 
+                    // VIDEO
                     "video" -> {
 
                         binding.ivMediaPreview.visibility =
@@ -117,10 +112,7 @@ class UploadDocumentaryActivity : AppCompatActivity() {
                         previewPlayer?.playWhenReady = false
                     }
 
-                    // =========================
                     // PDF
-                    // =========================
-
                     "pdf" -> {
 
                         binding.ivMediaPreview.visibility =
@@ -182,10 +174,8 @@ class UploadDocumentaryActivity : AppCompatActivity() {
 
     private fun setupScreen() {
 
-        // =========================
-        // DEFAULT STATE
-        // =========================
 
+        // DEFAULT STATE
         binding.ivMediaPreview.visibility =
             View.GONE
 
@@ -206,10 +196,8 @@ class UploadDocumentaryActivity : AppCompatActivity() {
 
         when (postType) {
 
-            // =========================
-            // IMAGE
-            // =========================
 
+            // IMAGE
             "image" -> {
 
                 binding.tvUploadTitle.text =
@@ -222,10 +210,7 @@ class UploadDocumentaryActivity : AppCompatActivity() {
                     "No image selected"
             }
 
-            // =========================
             // VIDEO
-            // =========================
-
             "video" -> {
 
                 binding.tvUploadTitle.text =
@@ -238,10 +223,7 @@ class UploadDocumentaryActivity : AppCompatActivity() {
                     "No video selected"
             }
 
-            // =========================
             // PDF
-            // =========================
-
             "pdf" -> {
 
                 binding.tvUploadTitle.text =
@@ -313,6 +295,7 @@ class UploadDocumentaryActivity : AppCompatActivity() {
             binding.etTitle.text
                 .toString()
                 .trim()
+                .take(20)
 
         val uri =
             selectedDocumentUri

@@ -1,11 +1,11 @@
+
 package com.example.tokenroomdatabase.ui.home
-
-
 
 import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
+import com.example.tokenroomdatabase.R
 import com.example.tokenroomdatabase.data.local.UserDatabase
 import com.example.tokenroomdatabase.data.model.Documentary
 import com.example.tokenroomdatabase.databinding.ActivityEditTextPostBinding
@@ -19,41 +19,42 @@ class EditTextPostActivity : AppCompatActivity() {
     private var documentaryId = 0
     private var documentary: Documentary? = null
 
-    override fun onCreate(
-        savedInstanceState: Bundle?
-    ) {
+    // Edit mode check
+    private var isEditMode = false
 
-        super.onCreate(
-            savedInstanceState
-        )
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
 
-        binding =
-            ActivityEditTextPostBinding.inflate(
-                layoutInflater
-            )
+        binding = ActivityEditTextPostBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
-        setContentView(
-            binding.root
-        )
+        database = UserDatabase.getDatabase(this)
 
-        database =
-            UserDatabase.getDatabase(
-                this
-            )
-
-        documentaryId =
-            intent.getIntExtra(
-                "documentary_id",
-                0
-            )
+        documentaryId = intent.getIntExtra("documentary_id", 0)
 
         loadPost()
 
-        binding.btnSave.setOnClickListener {
-            updatePost()
+        // Initially fields are NOT editable
+        setEditMode(false)
+
+        // Edit icon
+        binding.btnEdit.setOnClickListener {
+            setEditMode(true)
+
+            // Cursor title field par aa jaye
+            binding.etTitle.requestFocus()
+            binding.etTitle.setSelection(binding.etTitle.text?.length ?: 0)
         }
 
-        binding.btnCancel.setOnClickListener {
+        // Save
+        binding.btnSave.setOnClickListener {
+            if (isEditMode) {
+                updatePost()
+            }
+        }
+
+        // Back
+        binding.btnBack.setOnClickListener {
             finish()
         }
     }
@@ -62,11 +63,9 @@ class EditTextPostActivity : AppCompatActivity() {
 
         lifecycleScope.launch {
 
-            val post =
-                database.documentaryDao()
-                    .getDocumentaryById(
-                        documentaryId
-                    )
+            val post = database
+                .documentaryDao()
+                .getDocumentaryById(documentaryId)
 
             if (post == null) {
 
@@ -81,39 +80,61 @@ class EditTextPostActivity : AppCompatActivity() {
                 return@launch
             }
 
-            documentary =
-                post
+            documentary = post
 
-            binding.etTitle.setText(
-                post.title
+            binding.etTitle.setText(post.title)
+            binding.etDescription.setText(post.description)
+        }
+    }
+
+    private fun setEditMode(editMode: Boolean) {
+
+        isEditMode = editMode
+
+        binding.etTitle.isEnabled = editMode
+        binding.etDescription.isEnabled = editMode
+
+        if (editMode) {
+
+            // SAVE active
+            binding.btnSave.setTextColor(
+                getColor(R.color.blue)
             )
 
-            binding.etDescription.setText(
-                post.description
+            // Edit icon hide
+            binding.btnEdit.visibility = android.view.View.GONE
+
+        } else {
+
+            // SAVE disabled-looking
+            binding.btnSave.setTextColor(
+                android.graphics.Color.LTGRAY
             )
+
+            // Edit icon visible
+            binding.btnEdit.visibility = android.view.View.VISIBLE
         }
     }
 
     private fun updatePost() {
 
-        val title =
-            binding.etTitle.text
-                .toString()
-                .trim()
+        val title = binding.etTitle.text
+            .toString()
+            .trim()
 
-        val description =
-            binding.etDescription.text
-                .toString()
-                .trim()
+        val description = binding.etDescription.text
+            .toString()
+            .trim()
 
+        // Title validation
         if (title.isEmpty()) {
 
-            binding.etTitle.error =
-                "Please enter title"
+            binding.etTitle.error = "Please enter title"
 
             return
         }
 
+        // Description validation
         if (description.isEmpty()) {
 
             binding.etDescription.error =
@@ -124,8 +145,7 @@ class EditTextPostActivity : AppCompatActivity() {
 
         lifecycleScope.launch {
 
-            val oldPost =
-                documentary
+            val oldPost = documentary
 
             if (oldPost == null) {
 
@@ -138,16 +158,16 @@ class EditTextPostActivity : AppCompatActivity() {
                 return@launch
             }
 
-            val updatedPost =
-                oldPost.copy(
-                    title = title,
-                    description = description
-                )
+            // Updated object
+            val updatedPost = oldPost.copy(
+                title = title,
+                description = description
+            )
 
-            database.documentaryDao()
-                .updateDocumentary(
-                    updatedPost
-                )
+            // Update Room
+            database
+                .documentaryDao()
+                .updateDocumentary(updatedPost)
 
             Toast.makeText(
                 this@EditTextPostActivity,
@@ -159,3 +179,4 @@ class EditTextPostActivity : AppCompatActivity() {
         }
     }
 }
+

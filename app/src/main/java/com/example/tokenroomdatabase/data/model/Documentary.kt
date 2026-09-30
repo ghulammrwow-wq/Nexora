@@ -23,5 +23,7 @@ data class Documentary(
 
     val username: String,
 
-    val userImageUri: String
+    val userImageUri: String,
+
+    val favoritedAt: Long = 0L
 )

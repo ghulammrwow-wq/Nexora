@@ -24,10 +24,8 @@ class SplashActivity : AppCompatActivity() {
         binding = ActivitySplashBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // ==========================================
-        // NEXORA ANIMATION
-        // ==========================================
 
+        // NEXORA ANIMATION
         binding.tvNexora.alpha = 0f
         binding.tvNexora.scaleX = 0.7f
         binding.tvNexora.scaleY = 0.7f
@@ -40,10 +38,8 @@ class SplashActivity : AppCompatActivity() {
             .start()
 
 
-        // ==========================================
-        // TAGLINE ANIMATION
-        // ==========================================
 
+        // TAGLINE ANIMATION
         binding.tvTagline.alpha = 0f
 
         binding.tvTagline.postDelayed({
@@ -56,10 +52,7 @@ class SplashActivity : AppCompatActivity() {
         }, 700)
 
 
-        // ==========================================
         // CHECK LOGIN SESSION
-        // ==========================================
-
         Handler(Looper.getMainLooper()).postDelayed({
 
             val tokenManager = TokenManager(this)

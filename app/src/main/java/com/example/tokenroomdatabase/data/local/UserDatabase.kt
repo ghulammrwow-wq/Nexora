@@ -14,7 +14,7 @@ import com.example.tokenroomdatabase.data.model.User
         User::class,
         Documentary::class
     ],
-    version = 5,
+    version = 6,
     exportSchema = false
 )
 abstract class UserDatabase : RoomDatabase() {
@@ -28,15 +28,8 @@ abstract class UserDatabase : RoomDatabase() {
         @Volatile
         private var INSTANCE: UserDatabase? = null
 
-
-        // ==================== 1 -> 2 ====================
-
         val MIGRATION_1_2 = object : Migration(1, 2) {
-
-            override fun migrate(
-                database: SupportSQLiteDatabase
-            ) {
-
+            override fun migrate(database: SupportSQLiteDatabase) {
                 database.execSQL(
                     """
                     CREATE TABLE IF NOT EXISTS documentaries (
@@ -51,22 +44,14 @@ abstract class UserDatabase : RoomDatabase() {
             }
         }
 
-
-        // ==================== 2 -> 3 ====================
-
         val MIGRATION_2_3 = object : Migration(2, 3) {
-
-            override fun migrate(
-                database: SupportSQLiteDatabase
-            ) {
-
+            override fun migrate(database: SupportSQLiteDatabase) {
                 database.execSQL(
                     """
                     ALTER TABLE documentaries
                     ADD COLUMN userEmail TEXT NOT NULL DEFAULT ''
                     """.trimIndent()
                 )
-
                 database.execSQL(
                     """
                     ALTER TABLE documentaries
@@ -76,15 +61,8 @@ abstract class UserDatabase : RoomDatabase() {
             }
         }
 
-
-        // ==================== 3 -> 4 ====================
-
         val MIGRATION_3_4 = object : Migration(3, 4) {
-
-            override fun migrate(
-                database: SupportSQLiteDatabase
-            ) {
-
+            override fun migrate(database: SupportSQLiteDatabase) {
                 database.execSQL(
                     """
                     ALTER TABLE documentaries
@@ -94,15 +72,8 @@ abstract class UserDatabase : RoomDatabase() {
             }
         }
 
-
-        // ==================== 4 -> 5 ====================
-
         val MIGRATION_4_5 = object : Migration(4, 5) {
-
-            override fun migrate(
-                database: SupportSQLiteDatabase
-            ) {
-
+            override fun migrate(database: SupportSQLiteDatabase) {
                 database.execSQL(
                     """
                     ALTER TABLE documentaries
@@ -112,31 +83,34 @@ abstract class UserDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_5_6 = object : Migration(5, 6) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL(
+                    """
+                    ALTER TABLE documentaries
+                    ADD COLUMN favoritedAt INTEGER NOT NULL DEFAULT 0
+                    """.trimIndent()
+                )
+            }
+        }
 
-        // ==================== DATABASE ====================
-
-        fun getDatabase(
-            context: Context
-        ): UserDatabase {
-
+        fun getDatabase(context: Context): UserDatabase {
             return INSTANCE ?: synchronized(this) {
-
-                val instance =
-                    Room.databaseBuilder(
-                        context.applicationContext,
-                        UserDatabase::class.java,
-                        "user_database"
+                val instance = Room.databaseBuilder(
+                    context.applicationContext,
+                    UserDatabase::class.java,
+                    "user_database"
+                )
+                    .addMigrations(
+                        MIGRATION_1_2,
+                        MIGRATION_2_3,
+                        MIGRATION_3_4,
+                        MIGRATION_4_5,
+                        MIGRATION_5_6
                     )
-                        .addMigrations(
-                            MIGRATION_1_2,
-                            MIGRATION_2_3,
-                            MIGRATION_3_4,
-                            MIGRATION_4_5
-                        )
-                        .build()
+                    .build()
 
                 INSTANCE = instance
-
                 instance
             }
         }

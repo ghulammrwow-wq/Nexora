@@ -20,10 +20,8 @@ interface DocumentaryDao {
         documentary: Documentary
     )
 
-    // ==================================================
-    // UPDATE USER NAME AND IMAGE
-    // ==================================================
 
+    // UPDATE USER NAME AND IMAGE
     @Query("""
         UPDATE documentaries
         SET username = :username,
@@ -36,10 +34,8 @@ interface DocumentaryDao {
         imageUri: String
     )
 
-    // ==================================================
-    // GET SINGLE DOCUMENTARY BY ID
-    // ==================================================
 
+    // GET SINGLE DOCUMENTARY BY ID
     @Query("""
         SELECT * FROM documentaries
         WHERE id = :id
@@ -49,10 +45,8 @@ interface DocumentaryDao {
         id: Int
     ): Documentary?
 
-    // ==================================================
-    // GET DOCUMENTARIES BY TYPE
-    // ==================================================
 
+    // GET DOCUMENTARIES BY TYPE
     @Query("""
         SELECT * FROM documentaries
         WHERE (
@@ -65,10 +59,7 @@ interface DocumentaryDao {
         mediaType: String
     ): Flow<List<Documentary>>
 
-    // ==================================================
     // SEARCH DOCUMENTARIES
-    // ==================================================
-
     @Query("""
         SELECT * FROM documentaries
         WHERE (
@@ -83,21 +74,16 @@ interface DocumentaryDao {
         mediaType: String
     ): Flow<List<Documentary>>
 
-    // ==================================================
     // GET FAVORITE DOCUMENTARIES
-    // ==================================================
-
     @Query("""
         SELECT * FROM documentaries
         WHERE isFavorite = 1
-        ORDER BY id DESC
+        ORDER BY favoritedAt DESC, id DESC
     """)
     fun getFavoriteDocumentaries(): Flow<List<Documentary>>
 
-    // ==================================================
-    // NEW: DELETE DOCUMENTARY FROM ROOM
-    // ==================================================
 
+    // NEW: DELETE DOCUMENTARY FROM ROOM
     @Query("""
         DELETE FROM documentaries
         WHERE id = :documentaryId
@@ -106,10 +92,8 @@ interface DocumentaryDao {
         documentaryId: Int
     )
 
-    // ==================================================
-    // NEW: REMOVE ONLY FROM FAVORITES
-    // ==================================================
 
+    // NEW: REMOVE ONLY FROM FAVORITES
     @Query("""
         UPDATE documentaries
         SET isFavorite = 0

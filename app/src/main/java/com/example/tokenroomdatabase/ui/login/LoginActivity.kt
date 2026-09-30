@@ -58,10 +58,8 @@ class LoginActivity : AppCompatActivity() {
             )
 
 
-        // =========================================
-        // CHECK SAVED LOGIN
-        // =========================================
 
+        // CHECK SAVED LOGIN
         if (
             tokenManager.isSessionValid()
         ) {
@@ -91,20 +89,15 @@ class LoginActivity : AppCompatActivity() {
         }
 
 
-        // =========================================
-        // LOGIN BUTTON
-        // =========================================
 
+        // LOGIN BUTTON
         binding.btnLogin.setOnClickListener {
 
             login()
         }
 
 
-        // =========================================
         // SIGN UP
-        // =========================================
-
         binding.tvSignup.setOnClickListener {
 
             startActivity(
@@ -116,10 +109,7 @@ class LoginActivity : AppCompatActivity() {
         }
 
 
-        // =========================================
         // FORGOT PASSWORD
-        // =========================================
-
         binding.tvForgotPassword.setOnClickListener {
 
             forgotPassword()
@@ -127,10 +117,8 @@ class LoginActivity : AppCompatActivity() {
     }
 
 
-    // =========================================
-    // LOGIN
-    // =========================================
 
+    // LOGIN
     private fun login() {
 
         val email =
@@ -195,10 +183,8 @@ class LoginActivity : AppCompatActivity() {
             }
 
 
-            // =========================================
-            // SAVE LOGIN IN SHAREDPREFERENCES
-            // =========================================
 
+            // SAVE LOGIN IN SHAREDPREFERENCES
             tokenManager.saveLogin(
 
                 token =
@@ -209,10 +195,7 @@ class LoginActivity : AppCompatActivity() {
             )
 
 
-            // =========================================
             // OPEN HOME
-            // =========================================
-
             startActivity(
 
                 Intent(
@@ -230,10 +213,8 @@ class LoginActivity : AppCompatActivity() {
     }
 
 
-    // =========================================
-    // FORGOT PASSWORD
-    // =========================================
 
+    // FORGOT PASSWORD
     private fun forgotPassword() {
 
         val view =

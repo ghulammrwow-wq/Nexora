@@ -21,9 +21,8 @@ class TokenManager(context: Context) {
             Locale.getDefault()
         )
 
-    // =========================
+
     // SAVE LOGIN
-    // =========================
     fun saveLogin(
         token: String,
         email: String
@@ -105,9 +104,7 @@ class TokenManager(context: Context) {
         )
     }
 
-    // =========================
     // GET TOKEN
-    // =========================
     fun getToken(): String? {
 
         return preferences.getString(
@@ -116,9 +113,7 @@ class TokenManager(context: Context) {
         )
     }
 
-    // =========================
     // GET USER EMAIL
-    // =========================
     fun getUserEmail(): String? {
 
         return preferences.getString(
@@ -127,9 +122,7 @@ class TokenManager(context: Context) {
         )
     }
 
-    // =========================
     // CHECK LOGIN
-    // =========================
     fun isLoggedIn(): Boolean {
 
         return preferences.getBoolean(
@@ -138,9 +131,7 @@ class TokenManager(context: Context) {
         )
     }
 
-    // =========================
     // UPDATE LAST ACTIVE TIME
-    // =========================
     fun updateLastActiveTime() {
 
         val currentTime =
@@ -164,9 +155,7 @@ class TokenManager(context: Context) {
         )
     }
 
-    // =========================
     // CHECK SESSION
-    // =========================
     fun isSessionValid(): Boolean {
 
         val token =
@@ -315,9 +304,8 @@ class TokenManager(context: Context) {
         return valid
     }
 
-    // =========================
+
     // CLEAR LOGIN / LOGOUT
-    // =========================
     fun clearToken() {
 
         preferences.edit()
@@ -343,5 +331,9 @@ class TokenManager(context: Context) {
             "SESSION_CHECK",
             "========================================"
         )
+    }
+
+    fun clearSession() {
+        clearToken()
     }
 }

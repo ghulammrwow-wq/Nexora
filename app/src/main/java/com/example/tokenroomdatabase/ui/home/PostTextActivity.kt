@@ -33,8 +33,22 @@ class PostTextActivity : AppCompatActivity() {
         userEmail =
             intent.getStringExtra("user_email") ?: ""
 
+        setupDescriptionScroll()
+
         binding.btnPost.setOnClickListener {
             saveTextPost()
+        }
+    }
+
+    private fun setupDescriptionScroll() {
+        binding.etDescription.movementMethod = android.text.method.ScrollingMovementMethod()
+        binding.etDescription.setOnTouchListener { v, event ->
+            v.parent.requestDisallowInterceptTouchEvent(true)
+            if ((event.action and android.view.MotionEvent.ACTION_MASK) == android.view.MotionEvent.ACTION_UP) {
+                v.parent.requestDisallowInterceptTouchEvent(false)
+                v.performClick()
+            }
+            false
         }
     }
 
@@ -44,6 +58,7 @@ class PostTextActivity : AppCompatActivity() {
             binding.etTitle.text
                 .toString()
                 .trim()
+                .take(20)
 
         val description =
             binding.etDescription.text

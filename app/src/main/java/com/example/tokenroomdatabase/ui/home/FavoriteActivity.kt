@@ -1,17 +1,22 @@
 package com.example.tokenroomdatabase.ui.home
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.view.MotionEvent
+import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
-import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.example.tokenroomdatabase.data.local.UserDatabase
 import com.example.tokenroomdatabase.data.model.Documentary
 import com.example.tokenroomdatabase.databinding.ActivityFavoriteBinding
 import kotlinx.coroutines.launch
+import androidx.core.net.toUri
 
 class FavoriteActivity : AppCompatActivity() {
 
@@ -19,15 +24,25 @@ class FavoriteActivity : AppCompatActivity() {
 
     private lateinit var database: UserDatabase
 
-    private lateinit var documentaryAdapter: DocumentaryAdapter
+    private lateinit var adapter: DocumentaryAdapter
+
+
+    // PAGINATION
+    private var allFavorites =
+        emptyList<Documentary>()
+
+    private var visibleCount = 6
+
+    private var isLoadingMore = false
+
+
+    // TOUCH DETECTION
+    private var startY = 0f
 
     override fun onCreate(
         savedInstanceState: Bundle?
     ) {
-
-        super.onCreate(
-            savedInstanceState
-        )
+        super.onCreate(savedInstanceState)
 
         binding =
             ActivityFavoriteBinding.inflate(
@@ -43,30 +58,48 @@ class FavoriteActivity : AppCompatActivity() {
                 this
             )
 
-        setupFavorites()
+        setupRecyclerView()
+
+        loadFavorites()
+
+        binding.btnBack.setOnClickListener {
+            finish()
+        }
     }
 
-    // ==================================================
-    // SETUP FAVORITES
-    // ==================================================
 
-    private fun setupFavorites() {
+    // RECYCLER VIEW
+    @SuppressLint("ClickableViewAccessibility")
+    private fun setupRecyclerView() {
 
-        documentaryAdapter =
+        val layoutManager =
+            GridLayoutManager(
+                this,
+                2
+            )
+
+        binding.recyclerView.layoutManager =
+            layoutManager
+
+        binding.recyclerView.itemAnimator = null
+
+
+        // DOCUMENTARY ADAPTER
+        adapter =
             DocumentaryAdapter(
 
-                // ==================================================
-                // FAVORITE
-                // ==================================================
 
-                onFavoriteClick = {
-                        documentary ->
+                // FAVORITE
+                onFavoriteClick = { documentary ->
 
                     lifecycleScope.launch {
 
                         database.documentaryDao()
-                            .removeFromFavorite(
-                                documentary.id
+                            .updateDocumentary(
+                                documentary.copy(
+                                    isFavorite = false,
+                                    favoritedAt = 0L
+                                )
                             )
 
                         Toast.makeText(
@@ -77,68 +110,49 @@ class FavoriteActivity : AppCompatActivity() {
                     }
                 },
 
-                // ==================================================
-                // OPEN DOCUMENT
-                // ==================================================
 
-                onDocumentClick = {
-                        documentary ->
+                // DOCUMENT
+                onDocumentClick = { documentary ->
 
-                    try {
-
-                        val uri =
-                            Uri.parse(
-                                documentary.documentUri
-                            )
+                    if (
+                        documentary.mediaType == "video"
+                    ) {
 
                         val intent =
                             Intent(
-                                Intent.ACTION_VIEW
+                                this,
+                                FullScreenVideoActivity::class.java
                             )
 
-                        intent.setDataAndType(
-                            uri,
-                            contentResolver.getType(
-                                uri
-                            ) ?: "*/*"
-                        )
-
-                        intent.addFlags(
-                            Intent.FLAG_GRANT_READ_URI_PERMISSION
+                        intent.putExtra(
+                            "video_uri",
+                            documentary.documentUri
                         )
 
                         startActivity(
                             intent
                         )
 
-                    } catch (_: Exception) {
+                    } else {
 
-                        Toast.makeText(
-                            this@FavoriteActivity,
-                            "Cannot open documentary",
-                            Toast.LENGTH_SHORT
-                        ).show()
+                        openDocument(
+                            documentary
+                        )
                     }
                 },
 
-                // ==================================================
-                // SHARE
-                // ==================================================
 
-                onShareClick = {
-                        documentary ->
+                // SHARE
+                onShareClick = { documentary ->
 
                     shareDocumentary(
                         documentary
                     )
                 },
 
-                // ==================================================
-                // TEXT POST CLICK
-                // ==================================================
 
-                onTextClick = {
-                        documentary ->
+                // TEXT
+                onTextClick = { documentary ->
 
                     val intent =
                         Intent(
@@ -156,26 +170,115 @@ class FavoriteActivity : AppCompatActivity() {
                     )
                 },
 
-                // ==================================================
-                // NEW: DELETE FROM FAVORITE ONLY
-                // ==================================================
 
-                onDeleteClick = {
-                        documentary ->
+                // DELETE
+                onDeleteClick = { documentary ->
 
-                    showRemoveFavoriteDialog(
+                    showDeleteDialog(
                         documentary
                     )
+                },
+
+                isFavoriteScreen = true
+            )
+
+        binding.recyclerView.adapter =
+            adapter
+
+
+        // NORMAL SCROLL LISTENER
+        binding.recyclerView.addOnScrollListener(
+            object : RecyclerView.OnScrollListener() {
+
+                override fun onScrolled(
+                    recyclerView: RecyclerView,
+                    dx: Int,
+                    dy: Int
+                ) {
+
+                    super.onScrolled(
+                        recyclerView,
+                        dx,
+                        dy
+                    )
+
+                    if (dy <= 0) {
+                        return
+                    }
+
+                    if (isLoadingMore) {
+                        return
+                    }
+
+                    val lastVisibleItem =
+                        layoutManager
+                            .findLastVisibleItemPosition()
+
+                    val totalItemCount =
+                        layoutManager.itemCount
+
+                    if (
+                        lastVisibleItem >=
+                        totalItemCount - 1
+                    ) {
+
+                        loadNextSix()
+                    }
                 }
-            )
+            }
+        )
 
-        binding.rvFavorites.adapter =
-            documentaryAdapter
 
-        binding.rvFavorites.layoutManager =
-            LinearLayoutManager(
-                this
-            )
+        // UPWARD SWIPE DETECTION
+        binding.recyclerView.setOnTouchListener { view, event ->
+
+            when (event.actionMasked) {
+
+                MotionEvent.ACTION_DOWN -> {
+
+                    startY = event.rawY
+                }
+
+                MotionEvent.ACTION_UP -> {
+
+                    val endY = event.rawY
+
+                    val difference =
+                        startY - endY
+
+                    // User ne upward swipe kiya
+                    if (difference > 50) {
+
+                        // Agar aur favorites available hain
+                        if (
+                            visibleCount <
+                            allFavorites.size
+                        ) {
+
+                            // Agar normal RecyclerView
+                            // already bottom par hai
+                            if (
+                                !view.canScrollVertically(
+                                    1
+                                )
+                            ) {
+
+                                loadNextSix()
+                            }
+                        }
+                    }
+                }
+            }
+
+            false
+        }
+    }
+
+
+    // LOAD FAVORITES FROM ROOM
+
+
+    private fun loadFavorites() {
 
         lifecycleScope.launch {
 
@@ -183,69 +286,171 @@ class FavoriteActivity : AppCompatActivity() {
                 .getFavoriteDocumentaries()
                 .collect { list ->
 
-                    documentaryAdapter.submitList(
+                    allFavorites =
                         list
+
+
+                    // DATABASE MEIN ITEMS KAM HO GAYE
+                    if (
+                        visibleCount >
+                        allFavorites.size
+                    ) {
+
+                        visibleCount =
+                            allFavorites.size
+                    }
+
+
+                    // INITIAL 6
+                    if (
+                        visibleCount == 0 &&
+                        allFavorites.isNotEmpty()
+                    ) {
+
+                        visibleCount =
+                            minOf(
+                                6,
+                                allFavorites.size
+                            )
+                    }
+
+
+                    // DISPLAY ONLY VISIBLE ITEMS
+                    adapter.submitList(
+                        allFavorites.take(
+                            visibleCount
+                        )
                     )
                 }
         }
     }
 
-    // ==================================================
-    // NEW: REMOVE FAVORITE CONFIRMATION
-    // ==================================================
 
-    private fun showRemoveFavoriteDialog(
+    // LOAD NEXT 6
+    private fun loadNextSix() {
+
+        if (isLoadingMore) {
+            return
+        }
+
+        // Aur items nahi hain
+        if (
+            visibleCount >=
+            allFavorites.size
+        ) {
+            return
+        }
+
+        isLoadingMore = true
+
+
+        // SHOW LOADING
+        binding.progressBar.visibility =
+            View.VISIBLE
+
+
+        // SMALL DELAY
+        binding.recyclerView.postDelayed({
+
+
+            // NEXT 6
+            visibleCount += 6
+
+
+            // REMAINING ITEMS
+            if (
+                visibleCount >
+                allFavorites.size
+            ) {
+
+                visibleCount =
+                    allFavorites.size
+            }
+
+
+            // UPDATE CARDS
+            adapter.submitList(
+                allFavorites.take(
+                    visibleCount
+                )
+            )
+
+
+            // HIDE LOADING
+            binding.progressBar.visibility =
+                View.GONE
+
+            isLoadingMore = false
+
+        }, 700)
+    }
+
+
+    // OPEN IMAGE / PDF
+    private fun openDocument(
         documentary: Documentary
     ) {
 
-        AlertDialog.Builder(
-            this
-        )
-            .setTitle(
-                "Remove from Favorite"
-            )
-            .setMessage(
-                "Do you want to remove this post from favorites?"
-            )
-            .setNegativeButton(
-                "Cancel",
-                null
-            )
-            .setPositiveButton(
-                "Delete"
-            ) { _, _ ->
+        try {
 
-                lifecycleScope.launch {
+            val uri =
+                documentary.documentUri.toUri()
 
-                    database.documentaryDao()
-                        .removeFromFavorite(
-                            documentary.id
-                        )
+            val intent =
+                Intent(
+                    Intent.ACTION_VIEW
+                )
 
-                    Toast.makeText(
-                        this@FavoriteActivity,
-                        "Removed from favorite",
-                        Toast.LENGTH_SHORT
-                    ).show()
+            val mimeType =
+                contentResolver.getType(
+                    uri
+                ) ?: when (
+                    documentary.mediaType
+                ) {
+
+                    "image" ->
+                        "image/*"
+
+                    "pdf" ->
+                        "application/pdf"
+
+                    else ->
+                        "*/*"
                 }
-            }
-            .show()
+
+            intent.setDataAndType(
+                uri,
+                mimeType
+            )
+
+            intent.addFlags(
+                Intent.FLAG_GRANT_READ_URI_PERMISSION
+            )
+
+            startActivity(
+                intent
+            )
+
+        } catch (_: Exception) {
+
+            Toast.makeText(
+                this,
+                "Cannot open file",
+                Toast.LENGTH_SHORT
+            ).show()
+        }
     }
 
-    // ==================================================
-    // SHARE DOCUMENTARY
-    // ==================================================
 
+    // SHARE DOCUMENTARY
     private fun shareDocumentary(
         documentary: Documentary
     ) {
 
         try {
 
-            // ==================================================
-            // TEXT POST
-            // ==================================================
 
+            // TEXT POST
             if (
                 documentary.mediaType == "text"
             ) {
@@ -276,10 +481,8 @@ class FavoriteActivity : AppCompatActivity() {
                 return
             }
 
-            // ==================================================
-            // IMAGE / VIDEO / PDF
-            // ==================================================
 
+            // FILE POST
             if (
                 documentary.documentUri.isEmpty()
             ) {
@@ -294,9 +497,7 @@ class FavoriteActivity : AppCompatActivity() {
             }
 
             val uri =
-                Uri.parse(
-                    documentary.documentUri
-                )
+                documentary.documentUri.toUri()
 
             val mimeType =
                 contentResolver.getType(
@@ -350,5 +551,45 @@ class FavoriteActivity : AppCompatActivity() {
                 Toast.LENGTH_SHORT
             ).show()
         }
+    }
+
+
+    // DELETE CONFIRMATION
+    private fun showDeleteDialog(
+        documentary: Documentary
+    ) {
+
+        AlertDialog.Builder(
+            this
+        )
+            .setTitle(
+                "Delete Post"
+            )
+            .setMessage(
+                "Are you sure you want to delete this post?"
+            )
+            .setNegativeButton(
+                "Cancel",
+                null
+            )
+            .setPositiveButton(
+                "Delete"
+            ) { _, _ ->
+
+                lifecycleScope.launch {
+
+                    database.documentaryDao()
+                        .deleteDocumentaryById(
+                            documentary.id
+                        )
+
+                    Toast.makeText(
+                        this@FavoriteActivity,
+                        "Post deleted successfully",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+            .show()
     }
 }

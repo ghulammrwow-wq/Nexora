@@ -53,12 +53,11 @@
             android:name=".ui.splash.SplashActivity"
             android:exported="true"
             android:theme="@style/Theme.App.Starting">
-
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-
         </activity>
         <activity
             android:name=".ui.home.PostTextActivity"
@@ -102,8 +101,12 @@
         <activity
             android:name=".ui.home.EditTextPostActivity"
             android:exported="false"
-            android:windowSoftInputMode="adjustResize"/>
+            android:windowSoftInputMode="adjustResize" />
 
+        <activity
+            android:name=".ui.home.FullScreenVideoActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
 
     </application>
 
